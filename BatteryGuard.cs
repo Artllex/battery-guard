@@ -30,7 +30,21 @@ internal static class Program
             if (ShouldAlert(60, true, true) || !ShouldAlert(61, true, true) ||
                 !ShouldAlert(80, true, true) || ShouldAlert(255, true, true) ||
                 ShouldAlert(80, false, true) || ShouldAlert(80, true, false)) return 1;
-            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "self-test.txt"), "PASS: 60, 61, 80, unknown, no battery, API failure");
+            AlertPolicy policy = new AlertPolicy();
+            DateTime now = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            if (policy.Observe(60, false, now) || !policy.Observe(61, false, now) ||
+                policy.Observe(61, false, now.AddSeconds(15)) ||
+                !policy.Observe(62, false, now.AddSeconds(30)) ||
+                policy.Observe(61, false, now.AddSeconds(45)) ||
+                !policy.Observe(62, false, now.AddMinutes(1)) ||
+                policy.Observe(62, false, now.AddMinutes(10)) ||
+                !policy.Observe(62, false, now.AddMinutes(11)) ||
+                !policy.Observe(62, true, now.AddMinutes(12)) ||
+                policy.Observe(60, false, now.AddMinutes(13)) ||
+                !policy.Observe(61, false, now.AddMinutes(14)) ||
+                !policy.Observe(65, false, now.AddMinutes(15)) ||
+                !new AlertPolicy().Observe(80, false, now)) return 1;
+            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "self-test.txt"), "PASS: threshold, invalid readings, rise, unchanged, fall, renewed rise, 10-minute reminder, manual, rearm, jump, restart");
             return 0;
         }
         if (args.Length > 0 && args[0] == "--status")
@@ -53,11 +67,35 @@ internal static class Program
     }
 }
 
+internal sealed class AlertPolicy
+{
+    private int? previousPercent;
+    private DateTime lastAlert = DateTime.MinValue;
+
+    internal bool Observe(int percent, bool manual, DateTime now)
+    {
+        if (percent < 0 || percent > 100) return false;
+        bool rising = previousPercent.HasValue && percent > previousPercent.Value;
+        previousPercent = percent;
+        if (percent <= 60)
+        {
+            lastAlert = DateTime.MinValue;
+            return false;
+        }
+        if (manual || rising || now - lastAlert >= TimeSpan.FromMinutes(10))
+        {
+            lastAlert = now;
+            return true;
+        }
+        return false;
+    }
+}
+
 internal sealed class Guard : ApplicationContext
 {
     private readonly NotifyIcon icon;
     private readonly System.Windows.Forms.Timer timer;
-    private DateTime lastAlert = DateTime.MinValue;
+    private readonly AlertPolicy alerts = new AlertPolicy();
     private readonly ToolStripMenuItem startup;
     private string StartupFile { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "BatteryGuard60.vbs"); } }
 
@@ -94,17 +132,16 @@ internal sealed class Guard : ApplicationContext
         }
         int percent = power.BatteryLifePercent;
         icon.Text = "BatteryGuard — bateria " + percent + "% / limit 60%";
+        bool notify = alerts.Observe(percent, manual, DateTime.UtcNow);
         if (Program.ShouldAlert(percent, battery, known))
         {
-            if (manual || DateTime.UtcNow - lastAlert >= TimeSpan.FromMinutes(10))
+            if (notify)
             {
                 Show("Bateria przekroczyła 60%", "Poziom baterii: " + percent + "%. Sprawdź limit ładowania w G-Helper i ASUS lub odłącz zasilacz.", ToolTipIcon.Warning);
-                lastAlert = DateTime.UtcNow;
             }
         }
         else
         {
-            lastAlert = DateTime.MinValue;
             if (manual) Show("Poziom baterii", "Bateria: " + percent + "%. Limit 60% nie został przekroczony.", ToolTipIcon.Info);
         }
     }
