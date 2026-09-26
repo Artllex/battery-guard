@@ -177,7 +177,6 @@ internal sealed class Guard : ApplicationContext
     private void Show(string title, string text, ToolTipIcon kind)
     {
         icon.ShowBalloonTip(10000, title, text, kind);
-        if (kind == ToolTipIcon.Warning) System.Media.SystemSounds.Exclamation.Play();
     }
 
     private void ToggleStartup()
