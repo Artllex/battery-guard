@@ -13,6 +13,7 @@ Po kompilacji uruchom `dist/BatteryGuard.exe`. Program działa w tle; ikonę zna
 - Pokazuje powiadomienie Windows z systemowym dźwiękiem powiadomienia (zgodnie z ustawieniami Windows), bez dodatkowego sygnału programu. Gdy poziom pozostaje powyżej 60%, przypomina co 10 minut.
 - Każdy odczytany wzrost powyżej 60% powoduje kolejny alarm, np. 61% → 62% → 63%. Spadek nie wywołuje alarmu, ale późniejszy wzrost ponownie go wywoła. Przy skoku np. 61% → 64% pojawi się jeden alarm z aktualnym poziomem 64%; program nie odtwarza pominiętych poziomów.
 - Alarm pojawia się też przy uruchomieniu programu z baterią powyżej 60% oraz po ręcznym wybraniu **Sprawdź teraz**. Każdy alarm rozpoczyna od nowa 10 minut do kolejnego przypomnienia.
+- Po odczytanym spadku powyżej 60% automatyczne przypomnienia są wstrzymane, także gdy poziom później stoi w miejscu. Dopiero ponowny wzrost je wznawia. Poniżej 20% zmienia się wyłącznie ikona — program nie wysyła automatycznych alarmów niskiego poziomu.
 - Po spadku do 60% lub niżej ponownie uzbraja alarm.
 - Prawy przycisk na ikonie → **Uruchamiaj po zalogowaniu** włącza lub wyłącza autostart dla bieżącego użytkownika. Włącz go dopiero po umieszczeniu folderu w docelowym miejscu; po przeniesieniu wyłącz i włącz tę opcję ponownie.
 - **Sprawdź teraz** pozwala sprawdzić odczyt i powiadomienie. **Zakończ** zamyka monitor.

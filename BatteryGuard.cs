@@ -55,7 +55,17 @@ internal static class Program
                 !policy.Observe(61, false, now.AddMinutes(14)) ||
                 !policy.Observe(65, false, now.AddMinutes(15)) ||
                 !new AlertPolicy().Observe(80, false, now)) return 1;
-            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "self-test.txt"), "PASS: three embedded icons, icon boundaries 0/19/20/60/61/100, threshold, invalid readings, rise, unchanged, fall, renewed rise, 10-minute reminder, manual, rearm, jump, restart");
+            AlertPolicy cooling = new AlertPolicy();
+            if (!cooling.Observe(80, false, now) ||
+                cooling.Observe(79, false, now.AddMinutes(11)) ||
+                cooling.Observe(79, false, now.AddMinutes(22)) ||
+                cooling.Observe(78, false, now.AddMinutes(33)) ||
+                !cooling.Observe(79, false, now.AddMinutes(34)) ||
+                !cooling.Observe(79, false, now.AddMinutes(44))) return 1;
+            AlertPolicy low = new AlertPolicy();
+            if (low.Observe(10, false, now) || low.Observe(11, false, now.AddMinutes(11)) ||
+                low.Observe(9, false, now.AddMinutes(22))) return 1;
+            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "self-test.txt"), "PASS: icons and boundaries, alarm transitions, reminders suppressed after decline and plateau, renewed rise rearms reminders, no low-battery automatic alerts");
             return 0;
         }
         if (args.Length > 0 && args[0] == "--status")
@@ -83,18 +93,23 @@ internal sealed class AlertPolicy
 {
     private int? previousPercent;
     private DateTime lastAlert = DateTime.MinValue;
+    private bool recovering;
 
     internal bool Observe(int percent, bool manual, DateTime now)
     {
         if (percent < 0 || percent > 100) return false;
         bool rising = previousPercent.HasValue && percent > previousPercent.Value;
+        bool falling = previousPercent.HasValue && percent < previousPercent.Value;
+        if (falling) recovering = true;
+        if (rising) recovering = false;
         previousPercent = percent;
         if (percent <= 60)
         {
             lastAlert = DateTime.MinValue;
+            recovering = false;
             return false;
         }
-        if (manual || rising || now - lastAlert >= TimeSpan.FromMinutes(10))
+        if (manual || rising || (!recovering && now - lastAlert >= TimeSpan.FromMinutes(10)))
         {
             lastAlert = now;
             return true;
