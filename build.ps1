@@ -1,7 +1,8 @@
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 Add-Type -AssemblyName System.Drawing
-$source = [System.Drawing.Bitmap]::new((Join-Path $PSScriptRoot 'assets\BatteryGuard.png'))
+foreach ($assetName in @('BatteryGuard', 'BatteryGuard-normal', 'BatteryGuard-high')) {
+$source = [System.Drawing.Bitmap]::new((Join-Path $PSScriptRoot "assets\$assetName.png"))
 $sizes = @(16, 24, 32, 48, 64, 128, 256)
 $images = @()
 try {
@@ -19,7 +20,7 @@ try {
         } finally { $stream.Dispose(); $graphics.Dispose(); $bitmap.Dispose() }
     }
 } finally { $source.Dispose() }
-$file = [System.IO.File]::Create((Join-Path $PSScriptRoot 'assets\BatteryGuard.ico'))
+$file = [System.IO.File]::Create((Join-Path $PSScriptRoot "assets\$assetName.ico"))
 $writer = [System.IO.BinaryWriter]::new($file)
 try {
     $writer.Write([uint16]0); $writer.Write([uint16]1); $writer.Write([uint16]$sizes.Count)
@@ -34,9 +35,10 @@ try {
     }
     foreach ($bytes in $images) { $writer.Write([byte[]]$bytes) }
 } finally { $writer.Dispose() }
+}
 $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (!(Test-Path -LiteralPath $compiler)) { $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
 New-Item -ItemType Directory -Path 'dist' -Force | Out-Null
-& $compiler /nologo /target:winexe /out:dist/BatteryGuard.exe /win32icon:assets/BatteryGuard.ico /resource:assets/BatteryGuard.ico,BatteryGuard.ico /reference:System.Windows.Forms.dll /reference:System.Drawing.dll BatteryGuard.cs
+& $compiler /nologo /target:winexe /out:dist/BatteryGuard.exe /win32icon:assets/BatteryGuard.ico /resource:assets/BatteryGuard.ico,BatteryGuard.ico /resource:assets/BatteryGuard-normal.ico,BatteryGuard-normal.ico /resource:assets/BatteryGuard-high.ico,BatteryGuard-high.ico /reference:System.Windows.Forms.dll /reference:System.Drawing.dll BatteryGuard.cs
 if ($LASTEXITCODE -ne 0) { throw 'Compilation failed.' }
 Write-Output 'Built dist/BatteryGuard.exe with the approved icon.'

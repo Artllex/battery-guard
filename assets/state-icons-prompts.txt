@@ -1,0 +1,3 @@
+Built-in image_gen edits of the approved BatteryGuard.png.
+High: preserve battery outline and terminal, replace exclamation and bar with full continuous red interior charge indicator, narrow dark inset gap, transparent exterior.
+Normal: preserve battery outline and terminal, replace exclamation and bar with green fill covering bottom 60% of usable interior height, charcoal upper 40%, narrow dark inset gap, transparent exterior.

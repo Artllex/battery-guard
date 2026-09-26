@@ -22,11 +22,22 @@ internal static class Program
         return valid && hasBattery && percent > 60 && percent <= 100;
     }
 
+    internal static int IconState(int percent)
+    {
+        return percent < 20 ? 0 : (percent > 60 ? 2 : 1);
+    }
+
     [STAThread]
     private static int Main(string[] args)
     {
         if (args.Length > 0 && args[0] == "--self-test")
         {
+            if (IconState(0) != 0 || IconState(19) != 0 || IconState(20) != 1 ||
+                IconState(60) != 1 || IconState(61) != 2 || IconState(100) != 2) return 1;
+            foreach (string name in new[] { "BatteryGuard.ico", "BatteryGuard-normal.ico", "BatteryGuard-high.ico" })
+                using (Stream resource = typeof(Guard).Assembly.GetManifestResourceStream(name))
+                using (Icon artwork = new Icon(resource, new Size(32, 32)))
+                    if (artwork.Width != 32 || artwork.Height != 32) return 1;
             if (ShouldAlert(60, true, true) || !ShouldAlert(61, true, true) ||
                 !ShouldAlert(80, true, true) || ShouldAlert(255, true, true) ||
                 ShouldAlert(80, false, true) || ShouldAlert(80, true, false)) return 1;
@@ -44,7 +55,7 @@ internal static class Program
                 !policy.Observe(61, false, now.AddMinutes(14)) ||
                 !policy.Observe(65, false, now.AddMinutes(15)) ||
                 !new AlertPolicy().Observe(80, false, now)) return 1;
-            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "self-test.txt"), "PASS: threshold, invalid readings, rise, unchanged, fall, renewed rise, 10-minute reminder, manual, rearm, jump, restart");
+            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "self-test.txt"), "PASS: three embedded icons, icon boundaries 0/19/20/60/61/100, threshold, invalid readings, rise, unchanged, fall, renewed rise, 10-minute reminder, manual, rearm, jump, restart");
             return 0;
         }
         if (args.Length > 0 && args[0] == "--status")
@@ -94,6 +105,8 @@ internal sealed class AlertPolicy
 internal sealed class Guard : ApplicationContext
 {
     private readonly NotifyIcon icon;
+    private readonly Icon[] stateIcons = new Icon[3];
+    private int currentIconState = -1;
     private readonly System.Windows.Forms.Timer timer;
     private readonly AlertPolicy alerts = new AlertPolicy();
     private readonly ToolStripMenuItem startup;
@@ -108,9 +121,12 @@ internal sealed class Guard : ApplicationContext
         startup.Click += delegate { ToggleStartup(); };
         menu.Items.Add(startup);
         menu.Items.Add("Zakończ", null, delegate { ExitThread(); });
-        using (Stream resource = typeof(Guard).Assembly.GetManifestResourceStream("BatteryGuard.ico"))
-        using (Icon artwork = new Icon(resource, new Size(32, 32)))
-            icon = new NotifyIcon { Icon = (Icon)artwork.Clone(), Text = "BatteryGuard — limit 60%", ContextMenuStrip = menu, Visible = true };
+        string[] names = { "BatteryGuard.ico", "BatteryGuard-normal.ico", "BatteryGuard-high.ico" };
+        for (int i = 0; i < names.Length; i++)
+            using (Stream resource = typeof(Guard).Assembly.GetManifestResourceStream(names[i]))
+            using (Icon artwork = new Icon(resource, new Size(32, 32)))
+                stateIcons[i] = (Icon)artwork.Clone();
+        icon = new NotifyIcon { Icon = stateIcons[0], Text = "BatteryGuard — limit 60%", ContextMenuStrip = menu, Visible = true };
         icon.DoubleClick += delegate { Check(true); };
         timer = new System.Windows.Forms.Timer { Interval = 15000 };
         timer.Tick += delegate { Check(false); };
@@ -131,6 +147,12 @@ internal sealed class Guard : ApplicationContext
             return;
         }
         int percent = power.BatteryLifePercent;
+        int nextIconState = Program.IconState(percent);
+        if (currentIconState != nextIconState)
+        {
+            icon.Icon = stateIcons[nextIconState];
+            currentIconState = nextIconState;
+        }
         icon.Text = "BatteryGuard — bateria " + percent + "% / limit 60%";
         bool notify = alerts.Observe(percent, manual, DateTime.UtcNow);
         if (Program.ShouldAlert(percent, battery, known))
@@ -170,7 +192,12 @@ internal sealed class Guard : ApplicationContext
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) { timer.Stop(); timer.Dispose(); icon.Visible = false; icon.ContextMenuStrip.Dispose(); icon.Icon.Dispose(); icon.Dispose(); }
+        if (disposing)
+        {
+            timer.Stop(); timer.Dispose(); icon.Visible = false;
+            icon.ContextMenuStrip.Dispose(); icon.Dispose();
+            foreach (Icon artwork in stateIcons) artwork.Dispose();
+        }
         base.Dispose(disposing);
     }
 }

@@ -5,6 +5,7 @@
 Po kompilacji uruchom `dist/BatteryGuard.exe`. Program działa w tle; ikonę znajdziesz przy zegarze, czasem pod strzałką ukrytych ikon.
 
 - Odczytuje baterię co 15 sekund i ostrzega od 61%, także gdy przy uruchomieniu bateria jest już powyżej limitu.
+- Ikona zasobnika zmienia się co 15 sekund zgodnie z poziomem: poniżej 20% — wykrzyknik; od 20% do 60% włącznie — zielone wypełnienie do 60%; powyżej 60% — pełne czerwone wypełnienie. Wskaźnik zielony jest stałym symbolem dobrego zakresu, nie odzwierciedla każdego procentu. Przy braku odczytu zostaje ostatnia ikona, a opis wskazuje brak danych. Niski poziom zmienia ikonę, bez dodawania nowego alarmu.
 - Pokazuje powiadomienie Windows i odtwarza dźwięk. Gdy poziom pozostaje powyżej 60%, przypomina co 10 minut.
 - Każdy odczytany wzrost powyżej 60% powoduje kolejny alarm, np. 61% → 62% → 63%. Spadek nie wywołuje alarmu, ale późniejszy wzrost ponownie go wywoła. Przy skoku np. 61% → 64% pojawi się jeden alarm z aktualnym poziomem 64%; program nie odtwarza pominiętych poziomów.
 - Alarm pojawia się też przy uruchomieniu programu z baterią powyżej 60% oraz po ręcznym wybraniu **Sprawdź teraz**. Każdy alarm rozpoczyna od nowa 10 minut do kolejnego przypomnienia.
