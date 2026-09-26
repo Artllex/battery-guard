@@ -1,4 +1,4 @@
-#define AppVersion "0.1.0"
+#define AppVersion "0.1.1"
 [Setup]
 AppId={{F6D68F63-F784-46CD-ACFD-72C3119C7D51}
 AppName=BatteryGuard

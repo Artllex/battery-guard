@@ -1,3 +1,4 @@
 Built-in image_gen edits of the approved BatteryGuard.png.
+2026-09-27: double green outline thickness for small tray recognition; preserve PCB green, charcoal interior and 60% green fill. Derive full red and exclamation variants from the new thick green outline with genuine transparent exterior.
 High: preserve battery outline and terminal, replace exclamation and bar with full continuous red interior charge indicator, narrow dark inset gap, transparent exterior.
 Normal: preserve battery outline and terminal, replace exclamation and bar with green fill covering bottom 60% of usable interior height, charcoal upper 40%, narrow dark inset gap, transparent exterior.
