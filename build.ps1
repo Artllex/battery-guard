@@ -39,6 +39,6 @@ try {
 $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (!(Test-Path -LiteralPath $compiler)) { $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
 New-Item -ItemType Directory -Path 'dist' -Force | Out-Null
-& $compiler /nologo /target:winexe /out:dist/BatteryGuard.exe /win32icon:assets/BatteryGuard.ico /resource:assets/BatteryGuard.ico,BatteryGuard.ico /resource:assets/BatteryGuard-normal.ico,BatteryGuard-normal.ico /resource:assets/BatteryGuard-high.ico,BatteryGuard-high.ico /reference:System.Windows.Forms.dll /reference:System.Drawing.dll BatteryGuard.cs
+& $compiler /nologo /target:winexe /out:dist/BatteryGuard.exe /win32icon:assets/BatteryGuard-high.ico /resource:assets/BatteryGuard.ico,BatteryGuard.ico /resource:assets/BatteryGuard-normal.ico,BatteryGuard-normal.ico /resource:assets/BatteryGuard-high.ico,BatteryGuard-high.ico /reference:System.Windows.Forms.dll /reference:System.Drawing.dll BatteryGuard.cs
 if ($LASTEXITCODE -ne 0) { throw 'Compilation failed.' }
 Write-Output 'Built dist/BatteryGuard.exe with the approved icon.'

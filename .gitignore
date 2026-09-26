@@ -1,5 +1,6 @@
 BatteryGuard.exe
 dist/
+test_env/
 self-test.txt
 battery-status.txt
 assets/BatteryGuard-icon*.png

@@ -72,7 +72,8 @@ internal static class Program
             if (!created) return 0;
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            using (Guard context = new Guard()) Application.Run(context);
+            using (EventWaitHandle shutdown = new EventWaitHandle(false, EventResetMode.ManualReset, "Local\\BatteryGuard60Shutdown"))
+            using (Guard context = new Guard(shutdown)) Application.Run(context);
         }
         return 0;
     }
@@ -108,16 +109,18 @@ internal sealed class Guard : ApplicationContext
     private readonly Icon[] stateIcons = new Icon[3];
     private int currentIconState = -1;
     private readonly System.Windows.Forms.Timer timer;
+    private readonly System.Windows.Forms.Timer shutdownTimer;
     private readonly AlertPolicy alerts = new AlertPolicy();
     private readonly ToolStripMenuItem startup;
     private string StartupFile { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "BatteryGuard60.vbs"); } }
+    private string StartupShortcut { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "BatteryGuard.lnk"); } }
 
-    internal Guard()
+    internal Guard(EventWaitHandle shutdown)
     {
         ContextMenuStrip menu = new ContextMenuStrip();
         menu.Items.Add("Sprawdź teraz", null, delegate { Check(true); });
         startup = new ToolStripMenuItem("Uruchamiaj po zalogowaniu");
-        startup.Checked = File.Exists(StartupFile);
+        startup.Checked = File.Exists(StartupFile) || File.Exists(StartupShortcut);
         startup.Click += delegate { ToggleStartup(); };
         menu.Items.Add(startup);
         menu.Items.Add("Zakończ", null, delegate { ExitThread(); });
@@ -131,6 +134,9 @@ internal sealed class Guard : ApplicationContext
         timer = new System.Windows.Forms.Timer { Interval = 15000 };
         timer.Tick += delegate { Check(false); };
         timer.Start();
+        shutdownTimer = new System.Windows.Forms.Timer { Interval = 250 };
+        shutdownTimer.Tick += delegate { if (shutdown.WaitOne(0)) ExitThread(); };
+        shutdownTimer.Start();
         Check(false);
     }
 
@@ -178,14 +184,18 @@ internal sealed class Guard : ApplicationContext
     {
         try
         {
-            if (File.Exists(StartupFile)) File.Delete(StartupFile);
+            if (File.Exists(StartupFile) || File.Exists(StartupShortcut))
+            {
+                if (File.Exists(StartupFile)) File.Delete(StartupFile);
+                if (File.Exists(StartupShortcut)) File.Delete(StartupShortcut);
+            }
             else
             {
                 string exe = Application.ExecutablePath;
                 File.WriteAllText(StartupFile, "CreateObject(\"WScript.Shell\").Run " +
                     "Chr(34) & \"" + exe.Replace("\"", "\"\"") + "\" & Chr(34), 0, False\r\n");
             }
-            startup.Checked = File.Exists(StartupFile);
+            startup.Checked = File.Exists(StartupFile) || File.Exists(StartupShortcut);
         }
         catch (Exception ex) { MessageBox.Show("Nie udało się zmienić autostartu: " + ex.Message, "BatteryGuard"); }
     }
@@ -195,6 +205,7 @@ internal sealed class Guard : ApplicationContext
         if (disposing)
         {
             timer.Stop(); timer.Dispose(); icon.Visible = false;
+            shutdownTimer.Stop(); shutdownTimer.Dispose();
             icon.ContextMenuStrip.Dispose(); icon.Dispose();
             foreach (Icon artwork in stateIcons) artwork.Dispose();
         }
