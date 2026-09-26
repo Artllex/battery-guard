@@ -1,0 +1,6 @@
+BatteryGuard.exe
+dist/
+self-test.txt
+battery-status.txt
+assets/BatteryGuard-icon*.png
+assets/icon*-prompt.txt
