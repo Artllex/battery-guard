@@ -1,6 +1,6 @@
 # BatteryGuard — alarm powyżej 60%
 
-Instalator Inno Setup: `BatteryGuard-Setup-0.1.1.exe`. Instalacja dla bieżącego użytkownika, bez administratora. Program i deinstalator używają ikony pełnej czerwonej baterii. Wersja 0.1.1 ma grubszą obwódkę we wszystkich trzech ikonach zasobnika. Odinstalowanie: **Ustawienia Windows → Aplikacje → Zainstalowane aplikacje → BatteryGuard → Odinstaluj**. Deinstalator zamyka monitor i usuwa jego skróty oraz autostart zainstalowanej wersji.
+Instalator Inno Setup: `BatteryGuard-Setup-0.1.2.exe`. Instalacja dla bieżącego użytkownika, bez administratora. Program i deinstalator używają ikony pełnej czerwonej baterii. Wersja 0.1.2 wyrównuje dolną obwódkę zielonej ikony do czerwonej. Odinstalowanie: **Ustawienia Windows → Aplikacje → Zainstalowane aplikacje → BatteryGuard → Odinstaluj**. Deinstalator zamyka monitor i usuwa jego skróty oraz autostart zainstalowanej wersji.
 
 Kompilacja instalatora: `powershell -NoProfile -ExecutionPolicy Bypass -File .\build-installer.ps1 -Compiler "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"`.
 
