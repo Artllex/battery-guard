@@ -120,6 +120,7 @@ internal sealed class AlertPolicy
 internal sealed class Guard : ApplicationContext
 {
     private readonly NotifyIcon icon;
+    private StatusCard manualCard;
     private readonly Icon[] stateIcons = new Icon[3];
     private int currentIconState = -1;
     private readonly System.Windows.Forms.Timer timer;
@@ -163,7 +164,7 @@ internal sealed class Guard : ApplicationContext
         if (!battery || !known)
         {
             icon.Text = "BatteryGuard — brak odczytu baterii";
-            if (manual) Show("BatteryGuard — sprawdzenie baterii", "Nie udało się odczytać poziomu baterii. Sprawdzono: " + DateTime.Now.ToString("HH:mm:ss"), ToolTipIcon.Info);
+            if (manual) ShowManualCard("Nie udało się odczytać poziomu baterii.", 1);
             return;
         }
         int percent = power.BatteryLifePercent;
@@ -177,11 +178,9 @@ internal sealed class Guard : ApplicationContext
         bool notify = alerts.Observe(percent, manual, DateTime.UtcNow);
         if (manual)
         {
-            Show("BatteryGuard — sprawdzenie baterii", "Poziom baterii: " + percent + "%." +
-                (percent > 60 ? " Limit 60% został przekroczony. Sprawdź G-Helper i ASUS lub odłącz zasilacz."
-                    : " Limit 60% nie został przekroczony.") +
-                " Sprawdzono: " + DateTime.Now.ToString("HH:mm:ss"),
-                percent > 60 ? ToolTipIcon.Warning : ToolTipIcon.Info);
+            ShowManualCard(percent > 60
+                ? "Poziom baterii: " + percent + "%. Limit 60% został przekroczony."
+                : "Poziom baterii: " + percent + "%. Limit 60% nie został przekroczony.", nextIconState);
             return;
         }
         if (Program.ShouldAlert(percent, battery, known))
@@ -196,6 +195,14 @@ internal sealed class Guard : ApplicationContext
     private void Show(string title, string text, ToolTipIcon kind)
     {
         icon.ShowBalloonTip(10000, title, text, kind);
+    }
+
+    private void ShowManualCard(string text, int state)
+    {
+        if (manualCard != null) manualCard.Close();
+        manualCard = new StatusCard(text, stateIcons[state]);
+        manualCard.FormClosed += delegate { manualCard = null; };
+        manualCard.Show();
     }
 
     private void ToggleStartup()
@@ -222,10 +229,70 @@ internal sealed class Guard : ApplicationContext
     {
         if (disposing)
         {
+            if (manualCard != null) manualCard.Close();
             timer.Stop(); timer.Dispose(); icon.Visible = false;
             shutdownTimer.Stop(); shutdownTimer.Dispose();
             icon.ContextMenuStrip.Dispose(); icon.Dispose();
             foreach (Icon artwork in stateIcons) artwork.Dispose();
+        }
+        base.Dispose(disposing);
+    }
+}
+
+internal sealed class StatusCard : Form
+{
+    private readonly System.Windows.Forms.Timer dismiss;
+
+    protected override bool ShowWithoutActivation { get { return true; } }
+    protected override CreateParams CreateParams
+    {
+        get
+        {
+            CreateParams p = base.CreateParams;
+            p.ExStyle |= 0x08000000; // WS_EX_NOACTIVATE
+            return p;
+        }
+    }
+
+    internal StatusCard(string text, Icon artwork)
+    {
+        FormBorderStyle = FormBorderStyle.None;
+        ShowInTaskbar = false;
+        TopMost = true;
+        StartPosition = FormStartPosition.Manual;
+        BackColor = Color.FromArgb(39, 39, 39);
+        ForeColor = Color.White;
+        ClientSize = new Size(360, 112);
+        Rectangle area = Screen.PrimaryScreen.WorkingArea;
+        Location = new Point(area.Right - Width - 16, area.Bottom - Height - 16);
+
+        PictureBox picture = new PictureBox { Image = artwork.ToBitmap(), SizeMode = PictureBoxSizeMode.Zoom,
+            Location = new Point(16, 18), Size = new Size(32, 32) };
+        Controls.Add(picture);
+        Controls.Add(new Label { Text = "BatteryGuard", Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Location = new Point(60, 14), Size = new Size(260, 25) });
+        Controls.Add(new Label { Text = text + "  •  " + DateTime.Now.ToString("HH:mm:ss"),
+            Font = new Font("Segoe UI", 9), Location = new Point(60, 42), Size = new Size(280, 56) });
+        Button close = new Button { Text = "×", FlatStyle = FlatStyle.Flat, ForeColor = Color.White,
+            BackColor = BackColor, Location = new Point(326, 8), Size = new Size(26, 26), TabStop = false };
+        close.FlatAppearance.BorderSize = 0;
+        close.Click += delegate { Close(); };
+        Controls.Add(close);
+        dismiss = new System.Windows.Forms.Timer { Interval = 10000 };
+        dismiss.Tick += delegate { Close(); };
+        dismiss.Start();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            dismiss.Stop(); dismiss.Dispose();
+            foreach (Control control in Controls)
+            {
+                PictureBox picture = control as PictureBox;
+                if (picture != null) picture.Image.Dispose();
+            }
         }
         base.Dispose(disposing);
     }
