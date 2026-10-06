@@ -65,7 +65,6 @@ internal static class Program
             AlertPolicy low = new AlertPolicy();
             if (low.Observe(10, false, now) || low.Observe(11, false, now.AddMinutes(11)) ||
                 low.Observe(9, false, now.AddMinutes(22))) return 1;
-            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "self-test.txt"), "PASS: icons and boundaries, alarm transitions, reminders suppressed after decline and plateau, renewed rise rearms reminders, no low-battery automatic alerts");
             return 0;
         }
         if (args.Length > 0 && args[0] == "--status")
@@ -164,7 +163,7 @@ internal sealed class Guard : ApplicationContext
         if (!battery || !known)
         {
             icon.Text = "BatteryGuard — brak odczytu baterii";
-            if (manual) Show("BatteryGuard", "Nie udało się odczytać poziomu baterii.", ToolTipIcon.Info);
+            if (manual) ShowManual("Nie udało się odczytać poziomu baterii.");
             return;
         }
         int percent = power.BatteryLifePercent;
@@ -176,6 +175,13 @@ internal sealed class Guard : ApplicationContext
         }
         icon.Text = "BatteryGuard — bateria " + percent + "% / limit 60%";
         bool notify = alerts.Observe(percent, manual, DateTime.UtcNow);
+        if (manual)
+        {
+            ShowManual("Poziom baterii: " + percent + "%." +
+                (percent > 60 ? " Limit 60% został przekroczony. Sprawdź G-Helper i ASUS lub odłącz zasilacz."
+                    : " Limit 60% nie został przekroczony."));
+            return;
+        }
         if (Program.ShouldAlert(percent, battery, known))
         {
             if (notify)
@@ -183,10 +189,12 @@ internal sealed class Guard : ApplicationContext
                 Show("Bateria przekroczyła 60%", "Poziom baterii: " + percent + "%. Sprawdź limit ładowania w G-Helper i ASUS lub odłącz zasilacz.", ToolTipIcon.Warning);
             }
         }
-        else
-        {
-            if (manual) Show("Poziom baterii", "Bateria: " + percent + "%. Limit 60% nie został przekroczony.", ToolTipIcon.Info);
-        }
+    }
+
+    private void ShowManual(string text)
+    {
+        MessageBox.Show(text, "BatteryGuard — sprawdzenie baterii", MessageBoxButtons.OK,
+            MessageBoxIcon.None, MessageBoxDefaultButton.Button1, MessageBoxOptions.DefaultDesktopOnly);
     }
 
     private void Show(string title, string text, ToolTipIcon kind)
