@@ -1,6 +1,6 @@
 # BatteryGuard — alarm powyżej 60%
 
-Instalator Inno Setup: `BatteryGuard-Setup-0.1.3.exe`. Instalacja dla bieżącego użytkownika, bez administratora. Program i deinstalator używają ikony pełnej czerwonej baterii. Wersja 0.1.3 pokazuje wynik ręcznego sprawdzenia w osobnym oknie. Odinstalowanie: **Ustawienia Windows → Aplikacje → Zainstalowane aplikacje → BatteryGuard → Odinstaluj**. Deinstalator zamyka monitor i usuwa jego skróty oraz autostart zainstalowanej wersji.
+Instalator Inno Setup: `BatteryGuard-Setup-0.1.4.exe`. Instalacja dla bieżącego użytkownika, bez administratora. Program i deinstalator używają ikony pełnej czerwonej baterii. Ręczne sprawdzenie pokazuje kartę powiadomienia z aktualnym odczytem i godziną sprawdzenia. Odinstalowanie: **Ustawienia Windows → Aplikacje → Zainstalowane aplikacje → BatteryGuard → Odinstaluj**. Deinstalator zamyka monitor i usuwa jego skróty oraz autostart zainstalowanej wersji.
 
 Kompilacja instalatora: `powershell -NoProfile -ExecutionPolicy Bypass -File .\build-installer.ps1 -Compiler "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"`.
 
@@ -16,7 +16,7 @@ Po kompilacji uruchom `dist/BatteryGuard.exe`. Program działa w tle; ikonę zna
 - Po odczytanym spadku powyżej 60% automatyczne przypomnienia są wstrzymane, także gdy poziom później stoi w miejscu. Dopiero ponowny wzrost je wznawia. Poniżej 20% zmienia się wyłącznie ikona — program nie wysyła automatycznych alarmów niskiego poziomu.
 - Po spadku do 60% lub niżej ponownie uzbraja alarm.
 - Prawy przycisk na ikonie → **Uruchamiaj po zalogowaniu** włącza lub wyłącza autostart dla bieżącego użytkownika. Włącz go dopiero po umieszczeniu folderu w docelowym miejscu; po przeniesieniu wyłącz i włącz tę opcję ponownie.
-- **Sprawdź teraz** otwiera okno z bieżącym odczytem, widoczne także przy wyciszonych powiadomieniach Windows. **Zakończ** zamyka monitor.
+- **Sprawdź teraz** wysyła kartę powiadomienia z bieżącym odczytem. Każde kliknięcie zawiera godzinę sprawdzenia; widoczność karty zależy od ustawień powiadomień Windows. **Zakończ** zamyka monitor.
 
 Program nie zmienia limitów G-Helper ani ASUS. Monitoruje poziom baterii również po odłączeniu zasilacza. Podczas uśpienia nie działa; po wznowieniu sprawdzi stan przy kolejnym odczycie. Widoczność powiadomień i dźwięku zależy od ustawień Windows, trybu Nie przeszkadzać i głośności.
 

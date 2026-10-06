@@ -163,7 +163,7 @@ internal sealed class Guard : ApplicationContext
         if (!battery || !known)
         {
             icon.Text = "BatteryGuard — brak odczytu baterii";
-            if (manual) ShowManual("Nie udało się odczytać poziomu baterii.");
+            if (manual) Show("BatteryGuard — sprawdzenie baterii", "Nie udało się odczytać poziomu baterii. Sprawdzono: " + DateTime.Now.ToString("HH:mm:ss"), ToolTipIcon.Info);
             return;
         }
         int percent = power.BatteryLifePercent;
@@ -177,9 +177,11 @@ internal sealed class Guard : ApplicationContext
         bool notify = alerts.Observe(percent, manual, DateTime.UtcNow);
         if (manual)
         {
-            ShowManual("Poziom baterii: " + percent + "%." +
+            Show("BatteryGuard — sprawdzenie baterii", "Poziom baterii: " + percent + "%." +
                 (percent > 60 ? " Limit 60% został przekroczony. Sprawdź G-Helper i ASUS lub odłącz zasilacz."
-                    : " Limit 60% nie został przekroczony."));
+                    : " Limit 60% nie został przekroczony.") +
+                " Sprawdzono: " + DateTime.Now.ToString("HH:mm:ss"),
+                percent > 60 ? ToolTipIcon.Warning : ToolTipIcon.Info);
             return;
         }
         if (Program.ShouldAlert(percent, battery, known))
@@ -189,12 +191,6 @@ internal sealed class Guard : ApplicationContext
                 Show("Bateria przekroczyła 60%", "Poziom baterii: " + percent + "%. Sprawdź limit ładowania w G-Helper i ASUS lub odłącz zasilacz.", ToolTipIcon.Warning);
             }
         }
-    }
-
-    private void ShowManual(string text)
-    {
-        MessageBox.Show(text, "BatteryGuard — sprawdzenie baterii", MessageBoxButtons.OK,
-            MessageBoxIcon.None, MessageBoxDefaultButton.Button1, MessageBoxOptions.DefaultDesktopOnly);
     }
 
     private void Show(string title, string text, ToolTipIcon kind)
